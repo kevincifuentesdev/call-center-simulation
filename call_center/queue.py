@@ -1,9 +1,11 @@
+from message import Message
+
 class EmptyQueue(Exception):
     ...
 
 class CallCenterQueue:
     def __init__(self):
-        self.__queue: list[int] = []
+        self.__queue: list[Message] = []
 
     def enqueue(self, element: int):
         self.__queue.append(element)

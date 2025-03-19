@@ -13,3 +13,6 @@ class Message:
                 priority += self.__key_words[word]
 
         return priority
+    
+    def __lt__(self, other):
+        return len(self.message) < len(other.message)
