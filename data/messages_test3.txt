@@ -1,0 +1,35 @@
+Necesito ayuda con mi cuenta, no puedo acceder a mi perfil y necesito actualizar mi información personal.
+Tengo una duda sobre mi factura, hay un cargo que no reconozco y necesito aclararlo lo antes posible.
+Hay un problema con mi servicio, la conexión a internet es intermitente y afecta mi trabajo diario.
+Consulta sobre el nuevo plan, quiero saber más detalles sobre las tarifas y beneficios del nuevo plan de datos.
+Mi internet tiene un fallo, la velocidad es muy lenta y no puedo realizar videollamadas sin interrupciones.
+Emergencia, no tengo señal, necesito asistencia inmediata ya que dependo del servicio para mi negocio.
+Urgente, necesito asistencia, mi línea telefónica está caída y no puedo recibir llamadas importantes.
+Tengo una consulta técnica, necesito configurar mi router para mejorar la señal en toda la casa.
+Problema con la instalación, el técnico no completó la instalación correctamente y el servicio no funciona.
+Ayuda con la configuración, no puedo conectar mis dispositivos al Wi-Fi y necesito asistencia.
+Fallo en la conexión, la red se desconecta constantemente y afecta mi productividad.
+Emergencia médica, necesito comunicarme con urgencias y no tengo señal en mi teléfono.
+Consulta sobre el pago, quiero saber si puedo cambiar la fecha de vencimiento de mi factura.
+Duda sobre el contrato, necesito revisar las cláusulas del contrato antes de renovarlo.
+Problema con el router, el dispositivo no enciende y no tengo acceso a internet.
+Ayuda urgente, necesito restablecer mi servicio de inmediato ya que es crucial para mi trabajo.
+Fallo en el sistema, no puedo acceder a mi cuenta en línea y necesito resolverlo pronto.
+Emergencia en la línea, hay un corte en el servicio y necesito asistencia técnica urgente.
+Consulta general, quiero saber más sobre los servicios adicionales que ofrecen.
+Duda técnica, necesito ayuda para configurar mi correo electrónico en el teléfono.
+Problema de cobertura, no tengo señal en ciertas áreas de mi casa y necesito una solución.
+Ayuda con el dispositivo, mi teléfono no se conecta a la red y necesito asistencia.
+Fallo en el hardware, mi módem está dañado y necesito un reemplazo.
+Emergencia en el servicio, el servicio está completamente caído y necesito una solución inmediata.
+Consulta sobre la promoción, quiero saber si soy elegible para la nueva promoción de internet.
+Duda sobre la velocidad, la velocidad de mi internet no coincide con lo que contraté.
+Problema con la señal, la señal de mi televisión por cable se corta constantemente.
+Ayuda con la actualización, no puedo actualizar el software de mi dispositivo y necesito ayuda.
+Fallo en el software, la aplicación de gestión de mi cuenta no funciona correctamente.
+Emergencia en la red, hay un problema generalizado en la red y necesito información.
+Consulta sobre el equipo, quiero saber si puedo cambiar mi equipo por uno más moderno.
+Duda sobre la instalación, necesito saber si hay algún costo adicional por la instalación del servicio.
+Problema con la cuenta, no puedo acceder a mi cuenta y necesito restablecer mi contraseña.
+Ayuda con el soporte, necesito asistencia para resolver un problema técnico con mi servicio.
+Fallo en la transmisión, la calidad de la transmisión de video es muy baja y necesito una solución.
