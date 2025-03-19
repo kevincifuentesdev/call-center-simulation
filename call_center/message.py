@@ -13,4 +13,3 @@ class Message:
                 priority += self.__key_words[word]
 
         return priority
-    
