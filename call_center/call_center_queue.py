@@ -1,4 +1,4 @@
-from message import Message
+from messages import Message
 
 class EmptyQueue(Exception):
     ...
