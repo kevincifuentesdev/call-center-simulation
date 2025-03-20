@@ -28,5 +28,5 @@ if __name__ == "__main__":
     test3_path = 'data/messages_test3.txt'
 
     test1_queue = enqueue_messages(test1_path)
-    test1_queue = enqueue_messages(test2_path)
-    test1_queue = enqueue_messages(test3_path)
+    test2_queue = enqueue_messages(test2_path)
+    test3_queue = enqueue_messages(test3_path)
