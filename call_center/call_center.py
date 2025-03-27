@@ -4,58 +4,48 @@ import sys
 import signal
 import time
 import glob
+import random
 from call_center_queue import CallCenterQueue, EmptyQueue
 from messages import Message
 from agent import Agent
 
-DATA_FOLDER = "data"  # Carpeta fija donde se encuentran los mensajes
-
-def input_with_timeout(prompt: str, timeout: int) -> str:
-    """
-    Muestra un prompt y espera una entrada por el usuario con un timeout.
-    Si no hay respuesta en 'timeout' segundos, retorna una cadena vacía.
-    """
-    def alarm_handler(signum, frame):
-        raise TimeoutError
-
-    # Configura la señal para el timeout
-    signal.signal(signal.SIGALRM, alarm_handler)
-    signal.alarm(timeout)
-    try:
-        answer = input(prompt)
-        signal.alarm(0)  # Desactiva la alarma si se recibió respuesta
-        return answer
-    except TimeoutError:
-        print("\n(No se recibió respuesta en el tiempo establecido)")
-        signal.alarm(0)
-        return ""
+DATA_FOLDER = "data"
 
 def load_messages_from_data(queue: CallCenterQueue):
     """
     Recorre la carpeta DATA_FOLDER, carga todos los archivos .txt,
-    y encola cada mensaje encontrado.
+    y encola cada mensaje encontrado en orden aleatorio sin repetirlos.
     """
     if not os.path.exists(DATA_FOLDER):
         print("La carpeta de datos no existe.")
         return
 
     txt_files = glob.glob(os.path.join(DATA_FOLDER, "*.txt"))
-    total_mensajes = 0
+    all_messages = set()  # Usamos un conjunto para evitar duplicados
+
     for file_path in txt_files:
         with open(file_path, 'r', encoding='utf-8') as file:
-            mensajes = [line.strip() for line in file if line.strip()]
-            for msj in mensajes:
-                queue.enqueue(Message(msj))
-            total_mensajes += len(mensajes)
-    print(f"\nSe han cargado {total_mensajes} mensajes a la cola.")
-    # Después de cargar, la cola se ordenó internamente.
-    print("¡Ya se ordenó la cola!")
-    # Pregunta al usuario si desea ver la cola (espera 3 segundos)
-    respuesta = input_with_timeout("¿Desea ver la cola ordenada? (s/n): ", 3)
+            mensajes = {line.strip() for line in file if line.strip()}  # Usamos un conjunto para evitar duplicados en cada archivo
+            all_messages.update(mensajes)  # Agregamos los mensajes al conjunto global
+
+    # Convertir a lista y mezclar aleatoriamente
+    unique_messages = list(all_messages)
+    random.shuffle(unique_messages)
+
+    # Encolar los mensajes únicos en orden aleatorio
+    for msj in unique_messages:
+        queue.enqueue(Message(msj))
+
+    print(f"\nSe han cargado {len(unique_messages)} mensajes únicos a la cola en orden aleatorio.")
+
+    respuesta = input("¿Desea ver la cola ordenada? (s/n): ")
+    
     if respuesta.lower() == "s":
         print("Mensajes en cola:")
         print(queue)
+    
     print("Continuando con la operación...\n")
+
 
 def seleccionar_agente(agents: list[Agent]) -> Agent:
     """
@@ -113,7 +103,7 @@ def main():
                 continue
             # Selecciona aleatoriamente un mensaje a atender
             try:
-                mensaje = queue.dequeue_random()
+                mensaje = queue.dequeue()
             except EmptyQueue as e:
                 print(e)
                 continue
