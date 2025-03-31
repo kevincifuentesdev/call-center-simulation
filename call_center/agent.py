@@ -1,68 +1,47 @@
 # agent.py
 import time
 import uuid
-import sys
 from messages import Message
 
 class Agent:
-    def __init__(self, experience_level: str):
+    def __init__(self, experience_level: str) -> None:
         """
         Inicializa un agente con un ID único y nivel de experiencia.
-        Los agentes pueden ser "básico", "intermedio" o "experto".
+        Los niveles pueden ser 'básico', 'intermedio' o 'experto'.
         """
-        self.id = str(uuid.uuid4())[:8]  # Genera un ID único (solo los primeros 8 caracteres)
+        self.id: str = str(uuid.uuid4())[:8]  # Se usa solo una parte del UUID para legibilidad
         self.experience_level: str = experience_level.lower()
-        self.status: str = "disponible"
+        self.status: str = "disponible"  # "disponible" o "ocupado"
         self.tiempo_de_respuesta: float = 0.0
 
     def calculate_time(self, message: Message) -> float:
         """
         Calcula el tiempo estimado de atención basado en la longitud del mensaje,
-        la prioridad (peso de palabras clave) y el factor según la experiencia.
+        la prioridad y el factor de experiencia.
+        Fórmula: (número de palabras / 10 + prioridad / 2) * factor
+        Donde el factor es: 1.0 para 'básico', 0.75 para 'intermedio', 0.5 para 'experto'.
         """
-        longitud_mensaje = len(message.message.split())
-        peso_palabras_clave = message.priority
-        tiempo_estimado = (longitud_mensaje / 10) + (peso_palabras_clave / 2)
-        
-        # Factor de ajuste según el nivel de experiencia
+        words = message.message.split()
+        base_time = len(words) / 10 + message.priority / 2
         factor = {"básico": 1.0, "intermedio": 0.75, "experto": 0.5}.get(self.experience_level, 1.0)
-        
-        tiempo_final = tiempo_estimado * factor
+        tiempo_final = base_time * factor
         self.tiempo_de_respuesta = tiempo_final
         return tiempo_final
 
-    def atender(self, message: Message):
+    def atender(self, message: Message) -> None:
         """
-        Simula la atención del mensaje con una barra de progreso visual.
+        Atiende el mensaje asignado: muestra información, simula el tiempo de atención,
+        y actualiza el estado del agente.
         """
         self.status = "ocupado"
-        tiempo = self.calculate_time(message)
-
-        print(f"\n\033[1;34mAgente {self.id} ({self.experience_level.title()}) está atendiendo:\033[0m")
-        print(f"  📩 Mensaje: {message.message}")
-        print(f"   Prioridad: {message.priority} | ⏳ Tiempo estimado: {tiempo:.2f} segundos\n")
-
-        # Simulación con barra de progreso
-        self.simular_progreso(tiempo)
-
-        print(f"\n\033[1;32m✅ Agente {self.id} ha finalizado la atención.\033[0m\n")
+        t = self.calculate_time(message)
+        print(f"\nAgente {self.id} ({self.experience_level.title()}) está atendiendo:")
+        print(f"  Mensaje: {message.message}")
+        print(f"  Prioridad: {message.priority} | Tiempo estimado: {t:.2f} segundos")
+        print("Procesando...\n", flush=True)
+        time.sleep(t)
+        print(f"Agente {self.id} ha finalizado la atención.\n")
         self.status = "disponible"
 
-    def simular_progreso(self, tiempo: float):
-        """
-        Simula la espera con una barra de progreso visual en la consola.
-        """
-        barra_longitud = 30  # Longitud de la barra de progreso
-        intervalo = tiempo / barra_longitud  # Tiempo de espera por cada paso
-
-        for i in range(barra_longitud):
-            porcentaje = int((i + 1) / barra_longitud * 100)
-            barra = "█" * (i + 1) + "-" * (barra_longitud - (i + 1))
-            sys.stdout.write(f"\r[{barra}] {porcentaje}%")
-            sys.stdout.flush()
-            time.sleep(intervalo)
-        
-        sys.stdout.write("\n")  # Nueva línea después de la barra de progreso
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Agente {self.id} ({self.experience_level.title()} - {self.status})"
