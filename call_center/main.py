@@ -9,6 +9,7 @@ def main():
     queue = CallCenterQueue()
     agents = initialize_agents()
     processing_enabled = Event()  # Bandera para controlar el procesamiento
+    stop_event = Event()  # Bandera para detener los hilos
     threads = []  # Lista para almacenar los hilos de los agentes
     processing_started = False  # Bandera para verificar si el procesamiento ya comenzó
 
@@ -37,13 +38,13 @@ def main():
             print("Deteniendo el procesamiento y finalizando...")
             if processing_started:
                 processing_enabled.clear()  # Detener procesamiento
-                stop_agents(threads)
+                stop_agents(threads, stop_event)
             break
         elif opt == "5":
             if not processing_started:
                 print("Iniciando el procesamiento de mensajes...")
                 processing_enabled.set()  # Habilitar procesamiento
-                threads = start_agent_threads(agents, queue, processing_enabled)
+                threads = start_agent_threads(agents, queue, processing_enabled, stop_event)
                 processing_started = True
             else:
                 print("El procesamiento ya está en curso.")
@@ -55,7 +56,7 @@ def main():
             
             print("Todos los mensajes han sido procesados.")
             processing_enabled.clear()  # Detener procesamiento
-            stop_agents(threads)
+            stop_agents(threads, stop_event)
             break
         else:
             print("Opción inválida. Intente de nuevo.")

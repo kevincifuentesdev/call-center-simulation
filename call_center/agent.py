@@ -1,7 +1,12 @@
 # agent.py
 import time
 import uuid
+from datetime import datetime  # Importar para registrar la hora
 from messages import Message
+from threading import Lock
+
+# Bloqueo global para sincronizar la consola
+print_lock = Lock()
 
 class Agent:
     def __init__(self, experience_level: str) -> None:
@@ -35,12 +40,25 @@ class Agent:
         """
         self.status = "ocupado"
         t = self.calculate_time(message)
-        print(f"\nAgente {self.id} ({self.experience_level.title()}) está atendiendo:")
-        print(f"  Mensaje: {message.message}")
-        print(f"  Prioridad: {message.priority} | Tiempo estimado: {t:.2f} segundos")
-        print("Procesando...\n", flush=True)
-        time.sleep(t)
-        print(f"Agente {self.id} ha finalizado la atención.\n")
+
+        # Registrar la hora de inicio
+        start_time = datetime.now().strftime("%H:%M:%S")
+
+        with print_lock:  # Bloqueo para sincronizar la impresión
+            print(f"\n[{start_time}] Agente {self.id} ({self.experience_level.title()}) está atendiendo:")
+            print(f"  Mensaje: {message.message}")
+            print(f"  Prioridad: {message.priority} | Tiempo estimado: {t:.2f} segundos")
+            print("Procesando...\n", flush=True)
+
+        time.sleep(t)  # Simular el tiempo de procesamiento
+
+        # Registrar la hora de finalización
+        end_time = datetime.now().strftime("%H:%M:%S")
+
+        with print_lock:  # Bloqueo para sincronizar la impresión
+            print(f"[{end_time}] Agente {self.id} ha finalizado la atención.")
+            print(f"  Tiempo estimado: {t:.2f} segundos\n")
+
         self.status = "disponible"
 
     def __repr__(self) -> str:

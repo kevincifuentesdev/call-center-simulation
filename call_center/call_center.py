@@ -8,7 +8,6 @@ from messages import Message
 from agent import Agent
 
 DATA_FOLDER = "data"
-stop_event = threading.Event()
 print_lock = threading.Lock()
 
 def load_messages_from_data(queue: CallCenterQueue):
@@ -31,21 +30,24 @@ def load_messages_from_data(queue: CallCenterQueue):
         print(f"\nSe han cargado {len(queue._CallCenterQueue__queue)} mensajes únicos a la cola.")
 
 def agent_worker(agent: Agent, queue: CallCenterQueue, stop_event: threading.Event, processing_enabled: threading.Event):
-    while not stop_event.is_set():
-        processing_enabled.wait()  # Esperar hasta que el procesamiento esté habilitado
-        if agent.status == "disponible":
-            msg = queue.try_dequeue()
-            if msg:
-                agent.atender(msg)
+    try:
+        while not stop_event.is_set():
+            processing_enabled.wait()  # Esperar hasta que el procesamiento esté habilitado
+            if agent.status == "disponible":
+                msg = queue.try_dequeue()
+                if msg:
+                    agent.atender(msg)
+                else:
+                    time.sleep(0.5)
             else:
-                time.sleep(0.5)
-        else:
-            time.sleep(0.1)
+                time.sleep(0.1)
+    except Exception as e:
+        print(f"Error en el agente {agent.id}: {e}")
 
 def initialize_agents():
-    return [Agent("experto"), Agent("intermedio"),Agent("básico")]
+    return [Agent("experto"), Agent("intermedio"), Agent("básico")]
 
-def start_agent_threads(agents, queue, processing_enabled):
+def start_agent_threads(agents, queue, processing_enabled, stop_event):
     threads = []
     for agent in agents:
         t = threading.Thread(target=agent_worker, args=(agent, queue, stop_event, processing_enabled))
@@ -54,10 +56,12 @@ def start_agent_threads(agents, queue, processing_enabled):
         threads.append(t)
     return threads
 
-def stop_agents(threads):
+def stop_agents(threads, stop_event):
     stop_event.set()
     for t in threads:
-        t.join()
+        t.join(timeout=5)  # Esperar hasta 5 segundos por cada hilo
+        if t.is_alive():
+            print(f"Advertencia: El hilo {t.name} no se detuvo correctamente.")
 
 def get_agents_status(agents):
     return "\n".join(str(agent) for agent in agents)
