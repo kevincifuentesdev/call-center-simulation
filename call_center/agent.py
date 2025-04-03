@@ -61,5 +61,13 @@ class Agent:
 
         self.status = "disponible"
 
+    def __lt__(self, other: 'Agent') -> bool:
+        """
+        Define el orden de prioridad entre agentes basado en el nivel de experiencia.
+        'Experto' tiene mayor prioridad, seguido de 'Intermedio' y luego 'Básico'.
+        """
+        priority_order = {"experto": 0, "intermedio": 1, "básico": 2}
+        return priority_order[self.experience_level] < priority_order[other.experience_level]
+
     def __repr__(self) -> str:
         return f"Agente {self.id} ({self.experience_level.title()} - {self.status})"

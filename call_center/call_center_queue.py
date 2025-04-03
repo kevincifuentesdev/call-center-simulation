@@ -29,15 +29,6 @@ class CallCenterQueue:
                 raise EmptyQueue("La cola de mensajes está vacía.")
             return self.__queue.pop(0)
 
-    def try_dequeue(self) -> Optional[Message]:
-        """
-        Intenta extraer un mensaje sin lanzar error; retorna None si la cola está vacía.
-        """
-        with self.__lock:
-            if not self.__queue:
-                return None
-            return self.__queue.pop(0)
-
     def is_empty(self) -> bool:
         with self.__lock:
             return len(self.__queue) == 0
