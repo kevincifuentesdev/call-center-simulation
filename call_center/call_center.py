@@ -23,9 +23,9 @@ def load_messages_from_data(queue: CallCenterQueue):
     for file_path in txt_files:
         with open(file_path, 'r', encoding='utf-8') as file:
             for line in file:
-                mensaje = line.strip()
-                if mensaje:  # Ignorar líneas vacías
-                    queue.enqueue(Message(mensaje))
+                message = line.strip()
+                if message:  # Ignorar líneas vacías
+                    queue.enqueue(Message(message))
     
     with print_lock:
         print(f"\nSe han cargado {len(queue._CallCenterQueue__queue)} mensajes únicos a la cola.")

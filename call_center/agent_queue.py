@@ -2,9 +2,6 @@ import threading
 from typing import List, Optional
 from agent import Agent
 
-# filepath: /home/kevin/call-center-simulation/call_center/agent_queue.py
-# agent_queue.py
-
 class EmptyQueue(Exception):
     pass
 

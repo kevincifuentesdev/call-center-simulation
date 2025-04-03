@@ -28,7 +28,7 @@ class Agent:
         """
         words = message.message.split()
         base_time = len(words) / 10 + message.priority / 2
-        factor = {"básico": 1.0, "intermedio": 0.75, "experto": 0.5}.get(self.experience_level, 1.0)
+        factor = {"básico": 1.0, "intermedio": 0.75, "experto": 0.5}.get(self.experience_level, 1.0) #Valor por defecto 1.0
         tiempo_final = base_time * factor
         self.tiempo_de_respuesta = tiempo_final
         return tiempo_final
