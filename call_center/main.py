@@ -1,6 +1,6 @@
 from call_center import (
     CallCenterQueue, load_messages_from_data, initialize_agents,
-    start_agent_threads, stop_agents, get_agents_status, get_queue_status
+    start_agent_threads, stop_agents, get_queue_status, major_value_messages
 )
 from agent_queue import AgentQueue
 import time
@@ -8,10 +8,8 @@ from threading import Event
 
 def main():
     queue = CallCenterQueue()
-    agent_queue = AgentQueue()  # Usar AgentQueue en lugar de una lista
-    agents = initialize_agents()
-    for agent in agents:
-        agent_queue.enqueue(agent)  # Encolar agentes
+    agent_queue = initialize_agents(AgentQueue())
+    
 
     processing_enabled = Event()  # Bandera para controlar el procesamiento
     stop_event = Event()  # Bandera para detener los hilos
@@ -25,6 +23,7 @@ def main():
         print("2. Mostrar la cola de mensajes")
         print("3. Detener procesamiento y salir")
         print("4. Procesar TODOS los mensajes y finalizar")
+        print("5. Mayor grupo de mensajes con igual prioridad")
         print("===================================")
         opt = input("Seleccione una opción: ").strip()
         
@@ -51,15 +50,27 @@ def main():
                 print("El procesamiento ya está en curso.")
             
             # Esperar a que todos los mensajes sean procesados
-            while not queue.is_empty() or any(agent.status == "ocupado" for agent in agents):
+            while not queue.is_empty():
                 print("Procesando mensajes... Por favor, espere.")
                 time.sleep(1)
             
             print("Todos los mensajes han sido procesados.")
-            processing_enabled.clear()  # Detener procesamiento
-            stop_event.set()  # Señalar a los hilos que deben detenerse
+            processing_enabled.clear()  # Detener procesamiento            
             stop_agents(threads, stop_event)
             break
+        elif opt == "5":
+            major_value, first_message, last_message = major_value_messages(queue)
+            print("El grupo de prioridad con más incidencias es:")
+            print(major_value)
+
+            print("El primer mensaje del grupo es:")
+            print(first_message)
+
+            print("El último mensaje del grupo es:")
+            print(last_message)
+
+            print("Mensajes restantes en la cola:")
+            print(get_queue_status(queue))
         else:
             print("Opción inválida. Intente de nuevo.")
         

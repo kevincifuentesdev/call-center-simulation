@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime  # Importar para registrar la hora
 from messages import Message
 from threading import Lock
+from call_center_queue import CallCenterQueue, EmptyQueue
 
 # Bloqueo global para sincronizar la consola
 print_lock = Lock()
@@ -33,6 +34,7 @@ class Agent:
         self.tiempo_de_respuesta = tiempo_final
         return tiempo_final
 
+
     def atender(self, message: Message) -> None:
         """
         Atiende el mensaje asignado: muestra información, simula el tiempo de atención,
@@ -48,7 +50,7 @@ class Agent:
             print(f"\n[{start_time}] Agente {self.id} ({self.experience_level.title()}) está atendiendo:")
             print(f"  Mensaje: {message.message}")
             print(f"  Prioridad: {message.priority} | Tiempo estimado: {t:.2f} segundos")
-            print("Procesando...\n", flush=True)
+            print("Procesando...\n")
 
         time.sleep(t)  # Simular el tiempo de procesamiento
 
@@ -71,3 +73,4 @@ class Agent:
 
     def __repr__(self) -> str:
         return f"Agente {self.id} ({self.experience_level.title()} - {self.status})"
+    

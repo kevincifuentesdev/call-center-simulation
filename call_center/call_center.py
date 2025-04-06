@@ -28,35 +28,70 @@ def load_messages_from_data(queue: CallCenterQueue):
                     queue.enqueue(Message(message))
     
     with print_lock:
-        print(f"\nSe han cargado {len(queue._CallCenterQueue__queue)} mensajes únicos a la cola.")
+        print(f"\nSe han cargado {len(queue)} mensajes únicos a la cola.")
+
+def major_value_messages(messages: CallCenterQueue) -> tuple[int, Message, Message]:
+    """
+    Encuentra el grupo de mensajes con la prioridad más frecuente y retorna:
+    - La prioridad con más ocurrencias.
+    - El primer mensaje del grupo.
+    - El último mensaje del grupo.
+    """
+    aux_queue = CallCenterQueue()
+    priority_counts = {}
+
+    # Step 1: Count occurrences of each priority
+    with messages.lock:
+        while len(messages) > 0:
+            msg = messages.dequeue()
+            priority_counts[msg.priority] = priority_counts.get(msg.priority, 0) + 1
+            aux_queue.enqueue(msg)
+
+    # Step 2: Find the priority with the most occurrences
+    major_priority = max(priority_counts, key=priority_counts.get)
+
+    first_message = None
+    last_message = None
+
+    # Step 3: Process messages and remove all messages of the major group
+    with aux_queue.lock:
+        while len(aux_queue) > 0:
+            msg = aux_queue.dequeue()
+            if msg.priority == major_priority:
+                if first_message is None:
+                    first_message = msg  # Capture the first message
+                last_message = msg  # Update the last message
+            else:
+                messages.enqueue(msg)  # Re-enqueue non-major-priority messages
+
+    return major_priority, first_message, last_message
 
 def agent_worker(agent_queue: AgentQueue, message_queue: CallCenterQueue, stop_event: threading.Event, processing_enabled: threading.Event):
-    try:
-        while not stop_event.is_set():
-            processing_enabled.wait()  # Esperar hasta que el procesamiento esté habilitado
-            try:
-                agent = agent_queue.dequeue()  # Obtener el agente con mayor prioridad
-                if agent.status == "disponible":
-                    if message_queue.is_empty():
-                        # Si no hay más mensajes, reinsertar el agente y salir del bucle
-                        agent_queue.enqueue(agent)
-                        break
-                    msg = message_queue.dequeue()
-                    if msg:
-                        agent.atender(msg)
-                # Reinsertar el agente en la cola después de atender o si no hay mensajes
+    while not stop_event.is_set():
+        processing_enabled.wait()  # Esperar hasta que el procesamiento esté habilitado
+        agent = agent_queue.dequeue()  # Obtener el agente con mayor prioridad
+        if agent.status == "disponible":
+            if message_queue.is_empty():
+                # Si no hay más mensajes, reinsertar el agente y salir del bucle
                 agent_queue.enqueue(agent)
-            except EmptyQueue:
-                time.sleep(0.1)
-    except Exception as e:
-        print(f"Error en el agente: {e}")
+                break
+            msg = message_queue.dequeue()
+            
+            agent.atender(msg)
 
-def initialize_agents():
-    return [Agent("experto"), Agent("intermedio"), Agent("básico")]
+        # Reinsertar el agente en la cola después de atender o si no hay mensajes
+        agent_queue.enqueue(agent)
+
+def initialize_agents(agent_queue: AgentQueue):
+    agents = [Agent("experto"), Agent("intermedio"), Agent("básico")]
+    for agent in agents:
+        agent_queue.enqueue(agent)  # Encolar agentes
+
+    return agent_queue
 
 def start_agent_threads(agent_queue: AgentQueue, queue: CallCenterQueue, processing_enabled: threading.Event, stop_event: threading.Event):
     threads = []
-    for _ in range(len(agent_queue)):  # Use len(agent_queue) to determine the number of threads
+    for _ in range(len(agent_queue)):
         t = threading.Thread(target=agent_worker, args=(agent_queue, queue, stop_event, processing_enabled))
         t.daemon = True
         t.start()
