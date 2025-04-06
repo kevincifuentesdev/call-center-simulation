@@ -1,76 +1,105 @@
 from call_center import (
     CallCenterQueue, load_messages_from_data, initialize_agents,
-    start_agent_threads, stop_agents, get_agents_status, get_queue_status
+    start_agent_threads, stop_agents, get_queue_status, agent_worker  # Añadir agent_worker
 )
 from agent_queue import AgentQueue
 import time
 from threading import Event
+import threading
+import sys  # Importamos sys para manejar la salida
 
 def main():
     queue = CallCenterQueue()
-    agent_queue = AgentQueue()  # Usar AgentQueue en lugar de una lista
+    agent_queue = AgentQueue()
     agents = initialize_agents()
     for agent in agents:
-        agent_queue.enqueue(agent)  # Encolar agentes
+        agent_queue.enqueue(agent)
 
-    processing_enabled = Event()  # Bandera para controlar el procesamiento
-    stop_event = Event()  # Bandera para detener los hilos
-    threads = []  # Lista para almacenar los hilos de los agentes
-    processing_started = False  # Bandera para verificar si el procesamiento ya comenzó
+    processing_enabled = Event()
+    stop_event = Event()
+    threads = []
+    processing_started = False
+    registro_atenciones = []
+
+    # Forzamos el flush de la salida
+    sys.stdout.flush()
 
     while True:
-        # Mostrar el menú principal
-        print("=== SIMULADOR DE CALL CENTER ===")
-        print("1. Recargar mensajes desde carpeta 'data'")
-        print("2. Mostrar la cola de mensajes")
-        print("3. Detener procesamiento y salir")
-        print("4. Procesar TODOS los mensajes y finalizar")
-        print("===================================")
-        opt = input("Seleccione una opción: ").strip()
+        print("\n=== SIMULADOR DE CALL CENTER ===", flush=True)
+        print("1. Recargar mensajes desde carpeta 'data'", flush=True)
+        print("2. Mostrar la cola de mensajes", flush=True)
+        print("3. Detener procesamiento y salir", flush=True)
+        print("4. Procesar solo PRIMER y ÚLTIMO mensaje del grupo mayoritario", flush=True)
+        print("===================================", flush=True)
         
+        try:
+            opt = input("Seleccione una opción: ").strip()
+        except EOFError:
+            print("\nEntrada no válida. Saliendo...", flush=True)
+            break
+            
         if opt == "1":
-            print("Cargando mensajes desde la carpeta 'data'...")
+            registro_atenciones.clear()
+            print("\nCargando mensajes desde la carpeta 'data'...", flush=True)
             load_messages_from_data(queue)
-            print("Mensajes cargados correctamente.")
+            print(f"Mensajes cargados correctamente. Total: {len(queue)}", flush=True)
         elif opt == "2":
-            print("Cola de mensajes:")
-            print(get_queue_status(queue))
+            print("\nCola de mensajes actual:", flush=True)
+            print(get_queue_status(queue), flush=True)
         elif opt == "3":
-            print("Deteniendo el procesamiento y finalizando...")
+            print("\nDeteniendo el procesamiento...", flush=True)
             if processing_started:
-                processing_enabled.clear()  # Detener procesamiento
+                processing_enabled.clear()
+                stop_event.set()
                 stop_agents(threads, stop_event)
             break
+        
         elif opt == "4":
             if not processing_started:
-                print("Iniciando el procesamiento de mensajes...")
-                processing_enabled.set()  # Habilitar procesamiento
-                threads = start_agent_threads(agent_queue, queue, processing_enabled, stop_event)
+                registro_atenciones.clear()
+                print("\nIniciando procesamiento de extremos...", flush=True)
+                
+                if len(queue) < 2:
+                    print("Se necesitan al menos 2 mensajes", flush=True)
+                    continue
+                    
+                processing_enabled.set()
+                stop_event.clear()
+                
+                # Crear y configurar el hilo correctamente
+                t = threading.Thread(
+                    target= agent_worker,
+                    args=(
+                        agent_queue,
+                        queue,
+                        stop_event,
+                        processing_enabled,
+                        True,  # modo_extremos=True
+                        registro_atenciones
+                    ),
+                    daemon=True
+                )
+                t.start()
+                threads = [t]
                 processing_started = True
-            else:
-                print("El procesamiento ya está en curso.")
-            
-            # Esperar a que todos los mensajes sean procesados
-            while not queue.is_empty() or any(agent.status == "ocupado" for agent in agents):
-                print("Procesando mensajes... Por favor, espere.")
-                time.sleep(1)
-            
-            print("Todos los mensajes han sido procesados.")
-            processing_enabled.clear()  # Detener procesamiento
-            stop_event.set()  # Señalar a los hilos que deben detenerse
-            stop_agents(threads, stop_event)
-            break
-        else:
-            print("Opción inválida. Intente de nuevo.")
-        
-        time.sleep(1)
-    
-    if queue.is_empty():
-        print("Procedimiento finalizado: todos los mensajes han sido atendidos.")
-        print(f"Cola de agentes: \n{agent_queue}")
-    else:
-        print("Procesamiento detenido. Mensajes pendientes en la cola:")
-        print(get_queue_status(agent_queue))
+                
+                # Esperar con timeout
+                t.join(15)  # Esperar máximo 15 segundos
+                
+                # Generar reporte
+                print("\n\n=== REPORTE FINAL ===", flush=True)
+                if len(registro_atenciones) == 2:
+                    print("✓ 2 mensajes del grupo mayoritario atendidos:")
+                    print(f"1. {registro_atenciones[0]['mensaje']}")
+                    print(f"2. {registro_atenciones[1]['mensaje']}")
+                    print(f"Prioridad común: {registro_atenciones[0]['prioridad']}")
+                else:
+                    print(f"✗ Error: Se atendieron {len(registro_atenciones)} mensajes")
+                
+                print(f"\nMensajes restantes: {len(queue)}")
+                processing_enabled.clear()
+                stop_event.set()
+                break
 
 if __name__ == "__main__":
     main()

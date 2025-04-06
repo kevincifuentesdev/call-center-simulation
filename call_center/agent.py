@@ -48,7 +48,7 @@ class Agent:
             print(f"\n[{start_time}] Agente {self.id} ({self.experience_level.title()}) está atendiendo:")
             print(f"  Mensaje: {message.message}")
             print(f"  Prioridad: {message.priority} | Tiempo estimado: {t:.2f} segundos")
-            print("Procesando...\n", flush=True)
+            print("Procesando...\n")
 
         time.sleep(t)  # Simular el tiempo de procesamiento
 
