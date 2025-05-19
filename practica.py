@@ -1,150 +1,159 @@
 from dataclasses import dataclass, field
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Optional
 import threading
 import time
-from random import randint
-
-
+from random import randint, choice
+from collections import defaultdict
 
 @dataclass
 class Message:
-    InitialMessage: str
+    message: str
     PriorityValue: int = 0
     MessageLen: int = 0
-    RealMessage: str = ""
 
     def __post_init__(self):
-        self.RealMessage = self.InitialMessage
-        self.InitialMessage = self.InitialMessage.lower()
-        self.ConvertMessage()
         self.CalcPriorityValue()
 
     def CalcPriorityValue(self):
-        KeywordsValue:Dict = {
-            "emergencia": 10, 
+        original_text = self.message.lower()
+        words = original_text.split()
+
+        KeywordsValue: Dict[str, int] = {
+            "emergencia": 10,
             "urgente": 8,
-            "fallo crítico": 9,
+            "fallo": 9,
+            "crítico": 9,
             "problema": 5,
             "consulta": 2,
             "duda": 1
         }
-        for Word in self.InitialMessage:
-            if Word in KeywordsValue:
-                self.PriorityValue += KeywordsValue[Word]
-        return self.PriorityValue
-
-
-    def ConvertMessage(self) -> None:
-        self.InitialMessage = self.InitialMessage.split(" ")
-    
-
+        for word in words:
+            if word in KeywordsValue:
+                self.PriorityValue += KeywordsValue[word]
+        self.MessageLen = len(words)
+        return
 
     def __lt__(self, other: 'Message') -> bool:
         return self.PriorityValue < other.PriorityValue
 
     def __repr__(self):
-        return str(self.PriorityValue)
+        return f"[Prioridad: {self.PriorityValue} | Mensaje: {self.message}]"
 
 @dataclass
 class Agent:
-
-    ExperienceLevel: int
-    AssignedMessage: Message
+    ExperienceLevel: str 
+    AssignedMessage: Optional[Message] = None
     AgentID: int = field(default_factory=lambda: randint(1000, 9999))
     State: bool = True
 
-
     def __repr__(self):
+        return f"ID: {self.AgentID} | Experiencia: {self.ExperienceLevel} | Estado: {'Libre' if self.State else 'Ocupado'}"
 
-        return f"El ID del agente es: {self.AgentID}, su experiencia es {self.ExperienceLevel} & su estado es {self.State}"
+    def AtentionTime(self):
+        TimeReduction = {
+            'básico': 1,
+            'intermedio': 0.75,
+            'experto': 0.5
+        }.get(self.ExperienceLevel, 1)
 
-    def CalcMessageLen(self):
-        if self.ExperienceLevel == 0:
-            TimeReduction = 1
-        elif self.ExperienceLevel == 1:
-            TimeReduction = 0.75
-        elif self.ExperienceLevel == 2:
-            TimeReduction = 0.5
-        
-        return (len(self.AssignedMessage.RealMessage) / 10 + (self.AssignedMessage.PriorityValue / 2 )) * TimeReduction
+        if not self.AssignedMessage:
+            return 0
+        return (self.AssignedMessage.MessageLen / 10 + (self.AssignedMessage.PriorityValue / 2)) * TimeReduction
 
-    def __lt__(self, other:'Agent'):
-        return self.ExperienceLevel < other.ExperienceLevel
-    
-
+    def __lt__(self, other: 'Agent'):
+        levels = {'básico': 0, 'intermedio': 1, 'experto': 2}
+        return levels[self.ExperienceLevel] < levels[other.ExperienceLevel]
 
 @dataclass
 class PriorityQueue:
+    queue: List[Union[Message, Agent]] = field(default_factory=list)
 
-    _index: int = 0
-    _queue: List[Union[Message, Agent]] = field(default_factory=list)
+    def enqueue(self, item: Union[Message, Agent]) -> None:
+        self.queue.append(item)
+        self.queue.sort(reverse=True)
 
-    def Push(self, item: Message) -> None:
-        self._queue.append(item)
-        self._index += 1
-        self._queue.sort(reverse=True)
+    def dequeue(self) -> Union[Message, Agent, None]:
+        if self.queue:
+            return self.queue.pop(0)
+        return 
 
-    def Pop(self) -> Message:
-        if self._queue:
-            return self._queue.pop(0)
-        else:
-            return None
-        
-    def First(self) -> Message:
-        if self._queue:
-            return self._queue[0]
-        return None
-    
+    def first(self) -> Union[Message, Agent, None]:
+        if self.queue:
+            return self.queue[0]
+        return 
+
     def __repr__(self):
-        return str(self._queue)
-    
+        return str(self.queue)
+
     def __iter__(self):
-        return iter(self._queue)
-    
-Agents = PriorityQueue()
+        return iter(self.queue)
 
 
-def ReadData(PathToTxt):
+def ReadData(file_path: str) -> PriorityQueue:
     messages = PriorityQueue()
-    try:
-        with open(PathToTxt, 'r', encoding='utf-8') as file:
-            for line in file:
-                content = line.strip()
-                if content:
-                    messages.Push(Message(InitialMessage=content))
-    except FileNotFoundError:
-        print(f"Error: The file at {PathToTxt} was not found.")
+    with open(file_path, 'r', encoding='utf-8') as file:
+        for line in file:
+            content = line.strip()
+            if content:
+                messages.enqueue(Message(message=content))
+
     return messages
 
-
-
-ListaMensajes = ReadData("src/Practicas/Practica2Data.txt")
-
+Agents: List[Agent] = []
 
 def HireAgents(NumberOfAgents: int) -> None:
+    experience_levels = ['básico', 'intermedio', 'experto']
     for _ in range(NumberOfAgents):
-        Agents.Push(Agent(randint(0,2), ""))
+        level = choice(experience_levels)
+        Agents.append(Agent(level))
 
-def AssignMessages(Worker: Agent, NewMessage:Message):
-    Worker.AssignedMessage = NewMessage
-    Worker.State = False
-    print(f"El trabajador {Worker.AgentID} esta trabajando tiempo =  {Worker.CalcMessageLen()}")
-    time.sleep(Worker.CalcMessageLen())
-    Worker.State = True
-    print(f"El trabajador {Worker.AgentID} finalizo su trabajo")
-
-
-HandlerFlagg = False
+def AssignMessages(worker: Agent, new_message: Message):
+    worker.AssignedMessage = new_message
+    worker.State = False
+    duration = worker.AtentionTime()
+    print(f"Agente {worker.AgentID} ({worker.ExperienceLevel}) trabajando por {duration:.2f}s en: {new_message}")
+    time.sleep(duration)
+    worker.State = True
+    print(f"Agente {worker.AgentID} finalizó el trabajo.")
 
 def CallCenter(MessagesQueue: PriorityQueue):
-    
-    while MessagesQueue.First() is not None:
-        for Worker in Agents:
-            if Worker.State:  
-                threading.Thread(target=AssignMessages, args=(Worker, MessagesQueue.Pop())).start()
-                          
+    while MessagesQueue.first() is not None:
+        for worker in sorted(Agents, reverse=True): 
+            if worker.State and MessagesQueue.first():
+                msg = MessagesQueue.dequeue()
+                if msg:
+                    threading.Thread(target=AssignMessages, args=(worker, msg)).start()
+        time.sleep(0.1)
 
+def moda_len(cola: PriorityQueue):
+        prioridades = defaultdict(int)
+        for msg in cola:
+            prioridades[msg.MessageLen] += 1
+        moda = max(prioridades.values())
+        for len, frecuencia in prioridades.items():
+            if frecuencia == moda:
+                return len       
+        
+      
+def CallCenter_moda(MessagesQueue: PriorityQueue):
+    moda = moda_len(MessagesQueue)
+    aux_queue = PriorityQueue()
+    while MessagesQueue.first() is not None:
+        for worker in sorted(Agents, reverse=True): 
+            if worker.State and MessagesQueue.first():    
+                    msg = MessagesQueue.dequeue()
+                    if msg.MessageLen == moda: 
+                     threading.Thread(target=AssignMessages, args=(worker, msg)).start()
+                    else:                     
+                     aux_queue.enqueue(msg)
+                     
+    while aux_queue.first() is not None:
+        MessagesQueue.enqueue(aux_queue.dequeue())
+                     
+
+                        
+ListaMensajes = ReadData("messages_test2.txt")
 HireAgents(5)
-CallCenter(ListaMensajes)
+#CallCenter(ListaMensajes)
 
-print("Main Thread ")
+CallCenter_moda(ListaMensajes)
